@@ -1,0 +1,3 @@
+python-monerorpc==0.5.8
+monero-health==0.0.2
+Flask==1.1.1

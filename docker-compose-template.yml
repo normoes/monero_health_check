@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+  daemon_health_check:
+    build:
+        context: .
+        dockerfile: Dockerfile
+    ports:
+      - "18091:18091"
+    stdin_open: true
+    tty: true
+    network_mode: host
+    environment:
+      # - USER_ID=1000
+      - MONEROD_RPC_URL=127.0.0.1
+      - MONEROD_RPC_PORT=18081
+      - MONEROD_RPC_USER=
+      - MONEROD_RPC_PASSWORD=
+      # - MONERO_WALLET_RPC_URL=127.0.0.1
+      # - MONERO_WALLET_RPC_PORT=18083
+      # - MONERO_WALLET_RPC_USER=
+      # - MOENRO_WALLET_RPC_PASSWORD=
+      - OFFSET=12
+      - OFFSET_UNIT=minutes
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 10m
+        max-file: "3"
