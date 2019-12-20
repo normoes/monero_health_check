@@ -7,6 +7,7 @@ services:
         dockerfile: Dockerfile
     ports:
       - "18091:18091"
+      - "5000:5000"
     stdin_open: true
     tty: true
     network_mode: host
