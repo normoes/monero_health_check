@@ -1,10 +1,10 @@
-# Monerod health
+# Monero health check
 
 This is work in progress.
 
-Monerod health is a small webserver providing a REST API.
+The `Monero health check` is a small webserver providing a REST API.
 
-Monerd health is supposed to provide information about the Monero daemon health.
+`Monero health check` provides information about the Monero daemon health.
 
 Endpoints are:
 * `/api/v1`
@@ -21,16 +21,27 @@ Endpoints are:
   - Combines health checks from all `/health` endpoints, returning an overall `status`.
   - In case one of the health checks fails, `status` will become `ERROR`, check `/api/v1` for details.
 
-TODOs (among others):
-* Add functionality to send mattermost, slack notifications in case `status == "ERROR"`.
-* Use proper production WSGI server, instead of Flask development server.
-
 ## Configuration
 
-Right now, the server used is the Flask development server, not recommended for use in production.
+The Flask development server - not recommended for use in production - runs here:
+```
+    127.0.0.1:5000
+```
+**_Note_**:
 
-It is configured to listen at `127.0.0.1` on port `5000`.
+The development server in `app.py` is configured with `host=0.0.0.0` in order to make it accessible from witihn the docker container.
 
+The recommended way is to serve `Monero health check` using a real WSGI server like **gunicorn**.
+
+The easiest way is to just start the docker container (`python3.7`, `alpine3.10`):
+```
+    docker-compose up --build
+```
+
+The `Monero health check` service can be found here:
+```
+    127.0.0.1:18091
+```
 
 ### Monero daemon connection
 The connection to the Monero dameon can be configured using environment variables (also see `docker-compose-template.yml`):
@@ -42,13 +53,13 @@ The connection to the Monero dameon can be configured using environment variable
 | `MONEROD_RPC_USER` | `""` |
 | `MONEROD_RPC_PASSWORD` | `""` |
 
-The RPC connecton is established using [`python-monerorpc`](https://github.com/monero-ecosystem/python-monerorpc).
+The core of this service is the [`monero_health`](https://github.com/normoes/monero_health) module, which uses [`python-monerorpc`](https://github.com/monero-ecosystem/python-monerorpc) to establish the RPC connection to the Monero daemon.
 
 ### Last block age
 
 `/api/v1/last_block/health` returns a `status` key.
 
-This `status` returns whether the last block found on the daemon's blockchain is older than a pre-configured value:
+This `status` shows whether the last block found on the daemon's blockchain is older than a pre-configured value:
 
 | environment variable | default value |
 |----------------------|---------------|

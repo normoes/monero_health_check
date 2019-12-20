@@ -18,8 +18,8 @@ ENV MONERO_WALLET_RPC_PASSWORD=""
 ENV OFFSET=12
 ENV OFFSET_UNIT="minutes"
 
-ENTRYPOINT ["python"]
+ENTRYPOINT []
 
-CMD ["./app.py"]
+CMD ["gunicorn --workers 3 --bind 0.0.0.0:18091 wsgi:app"]
 
 
