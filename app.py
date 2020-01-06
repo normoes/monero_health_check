@@ -5,7 +5,10 @@ import logging
 from monero_health import (
     daemon_last_block_check,
     daemon_status_check,
+    DAEMON_STATUS_OK,
+    DAEMON_STATUS_ERROR,
 )
+
 
 logging.getLogger("DaemonHealth").setLevel(logging.DEBUG)
 
@@ -18,68 +21,101 @@ API_ENDPOINT = "api"
 HEALTH_ENDPOINT = "health"
 LAST_BLOCK_ENDPOINT = "last_block"
 DAEMON_ENDPOINT = "monerod"
-DAEMON_STATUS_OK = "OK"
-DAEMON_STATUS_ERROR = "ERROR"
 
 
-@app.route(f"/{API_ENDPOINT}/{API_VERSION}", methods=["GET"])
-def index():
+def get_endpoint_info(func=None):
+    status = DAEMON_STATUS_ERROR
+    response = defaultdict(dict)
+    
+    if not func:
+        return response
+
+    result = func()
+    if result:
+        status = result.pop("status", status)
+        response["result"].update(result)
+    
+    data = {HEALTH_ENDPOINT: {"status": status}}
+    response["result"].update(data)
+    return response
+
+
+def get_status(func=None):
+    status = DAEMON_STATUS_ERROR
+    response = defaultdict(dict)
+    
+    if not func:
+        return response
+
+    result = get_endpoint_info(func)
+    if result and "result" in result and HEALTH_ENDPOINT in result["result"]:
+        status = result["result"][HEALTH_ENDPOINT].get("status", status) 
+    
+    data = {"status": status}
+    response["result"].update(data)
+
+    return response
+
+
+def get_combined_endpoint_info():
     response = defaultdict(dict)
 
     last_block_status = False
     daemon_status = False
 
-    result = daemon_last_block_check()
-    if result:
-        last_block_status = True if result.get("block_recent", False) else False
-        data = dict({LAST_BLOCK_ENDPOINT: result})
-        last_block_status = True if result.get("block_recent", False) else False
-        data[LAST_BLOCK_ENDPOINT].update({HEALTH_ENDPOINT: {"status": DAEMON_STATUS_OK if all((last_block_status,)) else DAEMON_STATUS_ERROR}})
+    result = get_endpoint_info(daemon_last_block_check)
+    if result and "result" in result:
+        result_ = result["result"]
+        status = DAEMON_STATUS_ERROR 
+        if HEALTH_ENDPOINT in result_:
+            status = result_[HEALTH_ENDPOINT].pop("status", DAEMON_STATUS_ERROR)
+            del result_[HEALTH_ENDPOINT]
+        # last_block_status = result_.get("block_recent", last_block_status)
+        last_block_status  = True if status == DAEMON_STATUS_OK else False
+        data = {LAST_BLOCK_ENDPOINT: result_}
+        data[LAST_BLOCK_ENDPOINT].update({HEALTH_ENDPOINT: {"status": status}})
         response["result"].update(data)
 
-    result = daemon_status_check()
-    if result:
-        daemon_status = True if result.get("status", None) == DAEMON_STATUS_OK else False
-        data = dict({DAEMON_ENDPOINT: {"version": result.get("version", "---")}})
-        data[DAEMON_ENDPOINT].update({HEALTH_ENDPOINT: {"status": result.get("status", "---")}})
+    result = get_endpoint_info(daemon_status_check)
+    if result and "result" in result:
+        result_ = result["result"]
+        status = DAEMON_STATUS_ERROR 
+        if HEALTH_ENDPOINT in result_:
+            status = result_[HEALTH_ENDPOINT].pop("status", DAEMON_STATUS_ERROR)
+            del result_[HEALTH_ENDPOINT]
+        daemon_status = True if status == DAEMON_STATUS_OK else False
+        data = {DAEMON_ENDPOINT: result_}
+        data[DAEMON_ENDPOINT].update({HEALTH_ENDPOINT: {"status": status}})
         response["result"].update(data)
 
     data = {HEALTH_ENDPOINT: {"status": DAEMON_STATUS_OK if all((last_block_status, daemon_status)) else DAEMON_STATUS_ERROR}}
 
-
     response["result"].update(data)
 
-    return jsonify(response)
+    return response
 
 
-@app.route(f"/{API_ENDPOINT}/{API_VERSION}/{DAEMON_ENDPOINT}", methods=["GET"])
-def daemon():
+def get_combined_status():
+    status = DAEMON_STATUS_ERROR
     response = defaultdict(dict)
-
-    daemon_status = False
-
-    result = daemon_status_check()
-    if result:
-        daemon_status = True if result.get("status", None) == DAEMON_STATUS_OK else False
-        response["result"].update({"version": result.get("version", "---")})
-
-    data = {HEALTH_ENDPOINT: {"status": DAEMON_STATUS_OK if all((daemon_status,)) else DAEMON_STATUS_ERROR}}
+    
+    result = get_combined_endpoint_info()
+    print(result)
+    if result and "result" in result and HEALTH_ENDPOINT in result["result"]:
+        status = result["result"][HEALTH_ENDPOINT].get("status", status) 
+    
+    data = {"status": status}
     response["result"].update(data)
 
-    return jsonify(response)
+    return response
 
 
-@app.route(f"/{API_ENDPOINT}/{API_VERSION}/{DAEMON_ENDPOINT}/{HEALTH_ENDPOINT}", methods=["GET"])
-def daemon_health():
-    response = defaultdict(dict)
+@app.route(f"/{API_ENDPOINT}/{API_VERSION}", methods=["GET"])
+def index():
+    """Get combined daemon status info.
+    """
 
-    daemon_status = False
-
-    result = daemon_status_check()
-    if result:
-        daemon_status = True if result.get("status", None) == DAEMON_STATUS_OK else False
-
-    response["result"].update({"status": DAEMON_STATUS_OK if all((daemon_status,)) else DAEMON_STATUS_ERROR})
+    response = get_combined_endpoint_info()
 
     return jsonify(response)
 
@@ -88,53 +124,48 @@ def daemon_health():
 # and shows overall status.
 @app.route(f"/{API_ENDPOINT}/{API_VERSION}/{HEALTH_ENDPOINT}", methods=["GET"])
 def overall_health():
-    response = defaultdict(dict)
+    """Get combined daemon status.
+    """
 
-    last_block_status = False
-    daemon_status = False
+    response = get_combined_status()
 
-    result = daemon_last_block_check()
-    if result:
-        last_block_status = True if result.get("block_recent", False) else False
+    return jsonify(response)
 
-    result = daemon_status_check()
-    if result:
-        daemon_status = True if result.get("status", None) == DAEMON_STATUS_OK else False
 
-    response["result"] = {"status": DAEMON_STATUS_OK if all((last_block_status, daemon_status)) else DAEMON_STATUS_ERROR}
+@app.route(f"/{API_ENDPOINT}/{API_VERSION}/{DAEMON_ENDPOINT}", methods=["GET"])
+def daemon():
+    """Get daemon info.
+    """
 
+    response = get_endpoint_info(func=daemon_status_check)
+
+    return jsonify(response)
+
+
+@app.route(f"/{API_ENDPOINT}/{API_VERSION}/{DAEMON_ENDPOINT}/{HEALTH_ENDPOINT}", methods=["GET"])
+def daemon_health():
+    """Get daemon status.
+    """
+
+    response = get_status(func=daemon_status_check)
     return jsonify(response)
 
 
 @app.route(f"/{API_ENDPOINT}/{API_VERSION}/{LAST_BLOCK_ENDPOINT}", methods=["GET"])
 def last_block():
-    response = defaultdict(dict)
-    
-    last_block_status = False
+    """Get daemon's last block info.
+    """
 
-    result = daemon_last_block_check()
-    if result:
-        last_block_status = True if result.get("block_recent", False) else False
-        response["result"].update(result)
-    
-    data = {HEALTH_ENDPOINT: {"status": DAEMON_STATUS_OK if all((last_block_status,)) else DAEMON_STATUS_ERROR}}
-    response["result"].update(data)
-
+    response = get_endpoint_info(func=daemon_last_block_check)
     return jsonify(response)
 
 
 @app.route(f"/{API_ENDPOINT}/{API_VERSION}/{LAST_BLOCK_ENDPOINT}/{HEALTH_ENDPOINT}", methods=["GET"])
-def last_block_healh():
-    response = defaultdict(dict)
-    
-    last_block_status = False
+def last_block_health():
+    """Get dameon's last block status.
+    """
 
-    result = daemon_last_block_check()
-    if result:
-        last_block_status = True if result.get("block_recent", False) else False
-    
-    response["result"].update({"status": DAEMON_STATUS_OK if all((last_block_status,)) else DAEMON_STATUS_ERROR})
-
+    response = get_status(func=daemon_last_block_check)
     return jsonify(response)
 
 

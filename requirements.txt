@@ -1,4 +1,4 @@
 python-monerorpc==0.5.8
-monero-health==0.0.4
+monero-health==0.0.5
 Flask==1.1.1
 gunicorn==20.0.4
