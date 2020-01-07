@@ -5,8 +5,13 @@ import logging
 from monero_health import (
     daemon_last_block_check,
     daemon_status_check,
+    daemon_combined_status_check,
     DAEMON_STATUS_OK,
     DAEMON_STATUS_ERROR,
+    DAEMON_STATUS_UNKNOWN,
+    HEALTH_KEY,
+    LAST_BLOCK_KEY,
+    DAEMON_KEY,
 )
 
 
@@ -18,13 +23,13 @@ app = Flask(__name__)
 
 API_VERSION = "v1"
 API_ENDPOINT = "api"
-HEALTH_ENDPOINT = "health"
-LAST_BLOCK_ENDPOINT = "last_block"
-DAEMON_ENDPOINT = "monerod"
 
+HEALTH_ENDPOINT = HEALTH_KEY
+LAST_BLOCK_ENDPOINT = LAST_BLOCK_KEY
+DAEMON_ENDPOINT = DAEMON_KEY
 
 def get_endpoint_info(func=None):
-    status = DAEMON_STATUS_ERROR
+    status = DAEMON_STATUS_UNKNOWN
     response = defaultdict(dict)
     
     if not func:
@@ -41,7 +46,7 @@ def get_endpoint_info(func=None):
 
 
 def get_status(func=None):
-    status = DAEMON_STATUS_ERROR
+    status = DAEMON_STATUS_UNKNOWN
     response = defaultdict(dict)
     
     if not func:
@@ -59,44 +64,37 @@ def get_status(func=None):
 
 def get_combined_endpoint_info():
     response = defaultdict(dict)
+    
+    result = daemon_combined_status_check()
+    if result:
+        # Move 'status' to 'health' within 'last_block'.
+        if LAST_BLOCK_ENDPOINT in result:
+            result_ = result[LAST_BLOCK_ENDPOINT]
+            status = result_.pop("status", DAEMON_STATUS_UNKNOWN)
+            data = {LAST_BLOCK_ENDPOINT: result_}
+            data[LAST_BLOCK_ENDPOINT].update({HEALTH_ENDPOINT: {"status": status}})
+            response["result"].update(data)
 
-    last_block_status = False
-    daemon_status = False
+        # Move 'status' to 'health' within 'last_block'.
+        if DAEMON_ENDPOINT in result:
+            result_ = result[DAEMON_ENDPOINT]
+            status = result_.pop("status", DAEMON_STATUS_UNKNOWN)
+            data = {DAEMON_ENDPOINT: result_}
+            data[DAEMON_ENDPOINT].update({HEALTH_ENDPOINT: {"status": status}})
+            response["result"].update(data)
 
-    result = get_endpoint_info(daemon_last_block_check)
-    if result and "result" in result:
-        result_ = result["result"]
-        status = DAEMON_STATUS_ERROR 
-        if HEALTH_ENDPOINT in result_:
-            status = result_[HEALTH_ENDPOINT].pop("status", DAEMON_STATUS_ERROR)
-            del result_[HEALTH_ENDPOINT]
-        # last_block_status = result_.get("block_recent", last_block_status)
-        last_block_status  = True if status == DAEMON_STATUS_OK else False
-        data = {LAST_BLOCK_ENDPOINT: result_}
-        data[LAST_BLOCK_ENDPOINT].update({HEALTH_ENDPOINT: {"status": status}})
+        # Move 'status' to 'health' within 'result'.
+        status = DAEMON_STATUS_UNKNOWN
+        if "status" in result:
+            status = result.pop("status", status)
+        data = {HEALTH_ENDPOINT: {"status": status}}
         response["result"].update(data)
-
-    result = get_endpoint_info(daemon_status_check)
-    if result and "result" in result:
-        result_ = result["result"]
-        status = DAEMON_STATUS_ERROR 
-        if HEALTH_ENDPOINT in result_:
-            status = result_[HEALTH_ENDPOINT].pop("status", DAEMON_STATUS_ERROR)
-            del result_[HEALTH_ENDPOINT]
-        daemon_status = True if status == DAEMON_STATUS_OK else False
-        data = {DAEMON_ENDPOINT: result_}
-        data[DAEMON_ENDPOINT].update({HEALTH_ENDPOINT: {"status": status}})
-        response["result"].update(data)
-
-    data = {HEALTH_ENDPOINT: {"status": DAEMON_STATUS_OK if all((last_block_status, daemon_status)) else DAEMON_STATUS_ERROR}}
-
-    response["result"].update(data)
 
     return response
 
 
 def get_combined_status():
-    status = DAEMON_STATUS_ERROR
+    status = DAEMON_STATUS_UNKNOWN
     response = defaultdict(dict)
     
     result = get_combined_endpoint_info()

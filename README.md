@@ -6,6 +6,10 @@ The `Monero health check` is a small webserver providing a REST API.
 
 `Monero health check` provides information about the Monero daemon health.
 
+**_Note_**:
+
+There also is a docker image. Check it out: https://hub.docker.com/repository/docker/normoes/monero_health_check
+
 Endpoints are:
 * `/api/v1`
   - Combines results of all endpoints, returning everything.
@@ -20,6 +24,10 @@ Endpoints are:
 * `/api/v1/health`
   - Combines health checks from all `/health` endpoints, returning an overall `status`.
   - In case one of the health checks fails, `status` will become `ERROR`, check `/api/v1` for details.
+
+**_Note_**:
+
+The core of this service is the [`monero_health`](https://github.com/normoes/monero_health) module, which uses [`python-monerorpc`](https://github.com/monero-ecosystem/python-monerorpc) to establish the RPC connection to the Monero daemon.
 
 ## Configuration
 
@@ -53,7 +61,13 @@ The connection to the Monero dameon can be configured using environment variable
 | `MONEROD_RPC_USER` | `""` |
 | `MONEROD_RPC_PASSWORD` | `""` |
 
+**_Note_**:
+
 The core of this service is the [`monero_health`](https://github.com/normoes/monero_health) module, which uses [`python-monerorpc`](https://github.com/monero-ecosystem/python-monerorpc) to establish the RPC connection to the Monero daemon.
+
+**_Note_**:
+
+Please also refer to [`monero_health`](https://github.com/normoes/monero_health)
 
 ### Last block age
 
@@ -72,87 +86,158 @@ In this case `status` will be `ERROR`, otherwise `status` is `OK`.
 
 A `status` resulting in `ERROR` causes the overall `status` returned by requesting `/api/v1/health` to be `ERROR` as well.
 
-## Result
+**_Note_**:
 
-* Requesting `/api/v1/monerod`:
+Please also refer to [`monero_health`](https://github.com/normoes/monero_health)
+
+### Daemon status
+
+No configuration is needed.
+
+The Monero RPC method used is:
+* `hard_fork_info`
+
+**_Note_**:
+
+Please also refer to [`monero_health`](https://github.com/normoes/monero_health)
+
+## Endpoints
+
+The current version uses the API version
+```
+/api/v1
+```
+
+`v1` is the current version.
+
+### Last block age
+
+`/api/v1/last_block` returns the complete set of information about the last block on the daemon including a nested `health` key that contains the `status`:
 ```
 {
-  "result": {
-    "health": {
-      "status": "OK"
-    },
-    "version": 12
-  }
-}
-```
-* Requesting `/api/v1/monerod/health`:
-```
-{
-  "result": {
-    "status": "OK"
-  }
-}
-```
-* Requesting `/api/v1/last_block`.
-  - The `status` (`result.last_block.health.status`) returns `ERROR`, because of the age of the last block (see timestamp values and offset):
-```
-{
-  "result": {
-    "block_recent": false,
-    "block_recent_offset": 1,
-    "block_recent_offset_unit": "minutes",
-    "block_timestamp": "2019-12-13T12:00:12",
-    "check_timestamp": "2019-12-13T12:01:27.986828",
-    "hash": "eeeed694216ebe390da5bf4bb5d5e218adf1ea7f27ea37cf6910d67ad7797e23",
-    "health": {
-      "status": "ERROR"
+    "result": {
+        "block_recent": true,
+        "block_recent_offset": "12",
+        "block_recent_offset_unit": "minutes",
+        "block_timestamp": "2020-01-07T14:57:52",
+        "check_timestamp": "2020-01-07T14:58:07",
+        "hash": "b105782d8e50d142d05abf0159d248a2898c09c3984cd69e144c8bfe7def0ee3",
+        "health": {
+            "status": "OK"
+        }
     }
-  }
 }
 ```
-* Requesting `/api/v1/last_block/health`.
-  - Based on example above (Requesting `/api/v1/last_block`):
+
+`/api/v1/last_block/health` returns the last block's `status` only:
 ```
 {
-  "result": {
-    "status": "ERROR"
-  }
-}
-```
-* Requesting `/api/v1` when the last block is considered t be out-of-date. This example uses an offset of `1 [minutes]`.
-  - The overall `status` (`result.health.status`) returns `ERROR`, because of the age of the last block (`result.last_block.health.status`):
-```
-{
-  "result": {
-    "health": {
-      "status": "ERROR"
-    }, 
-    "last_block": {
-      "block_recent": false, 
-      "block_recent_offset": 1, 
-      "block_recent_offset_unit": "minutes", 
-      "block_timestamp": "2019-12-13T11:20:43", 
-      "check_timestamp": "2019-12-13T11:21:56.948074", 
-      "hash": "db8b0f89d31d14e499d7af25d15b3e7ce88cd4746a71172a4342f58e1207854b", 
-      "health": {
-        "status": "ERROR"
-      }
-    }, 
-    "monerod": {
-      "health": {
+    "result": {
         "status": "OK"
-      }, 
-      "version": 12
     }
-  }
 }
 ```
-* Requesting `/api/v1/health`.
-  - Based on example above (Requesting `/api/v1`):
+
+### Daemon status
+
+`/api/v1/monerod` returns some daemon information simply by calling the RPC method `hard_fork_info`. Here, as well, you will find a nested `health` key that contains the `status`:
 ```
 {
-  "result": {
-    "status": "ERROR"
-  }
+    "result": {
+        "health": {
+            "status": "OK"
+        },
+        "version": 12
+    }
+}
+```
+
+`/api/v1/monerod/health` returns the daemon's `status` only:
+```
+{
+    "result": {
+        "status": "OK"
+    }
+}
+```
+
+### Combined Status
+
+`/api/v1` checks every health endpoint possible and returns a complete list of all the possible information. Again, a nested `health` key contains the combined `status`:
+```
+{
+    "result": {
+        "health": {
+            "status": "OK"
+        },
+        "last_block": {
+            "block_recent": true,
+            "block_recent_offset": 12,
+            "block_recent_offset_unit": "minutes",
+            "block_timestamp": "2020-01-07T14:58:14",
+            "check_timestamp": "2020-01-07T15:06:37",
+            "hash": "b105d4c44e0a4d7e0cadcf3997ee4947b895983341d05969d29c3c119c9bee08",
+            "health": {
+                "status": "OK"
+            }
+        },
+        "monerod": {
+            "health": {
+                "status": "OK"
+            },
+            "version": 12
+        }
+    }
+}
+```
+
+`/api/v1/health` returns the combined `status` only:
+```
+{
+    "result": {
+        "status": "OK"
+    }
+}
+```
+
+## Results
+
+### Possible status values
+**_Note_**:
+
+For possible daemon `status` values, please also refer to [`monero_health`](https://github.com/normoes/monero_health)
+
+### Errors
+**_Note_**:
+
+For more details on error handling, please also refer to [`monero_health`](https://github.com/normoes/monero_health)
+
+In case of an error an `error` key is added to the responses of:
+* `daemon_last_block_check`
+* `daemon_status_check`
+but not to `daemon_combined_status_check`.
+
+This error key always contains the keys:
+* `error`
+* `message`
+
+Example:
+```
+{
+    "result": {
+        "block_recent": false,
+        "block_recent_offset": "12",
+        "block_recent_offset_unit": "minutes",
+        "block_timestamp": "---",
+        "check_timestamp": "2020-01-07T14:53:24",
+        "error": {
+            "error": "-341: could not establish a connection, original error: HTTPConnectionPool(host='127.0.0.1', port=18081): Max retries exceeded with url: /json_rpc (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7fe25e449cd0>: Failed to establish a new connection: [Errno 111] Connection refused'))",
+            "message": "Cannot determine daemon status. Daemon: '127.0.0.1:18081'."
+        },
+        "hash": "---",
+        "health": {
+            "status": "UNKNOWN"
+        }
+    }
 }
 ```
