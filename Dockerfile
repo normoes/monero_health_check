@@ -1,4 +1,6 @@
-FROM python:3.7-alpine3.10
+ARG ALPINE_VERSION="${ALPINE_VERSION:-3.10}"
+ARG PYTHON_VERSION="${PYTHON_VERSION:-3.7}"
+FROM python:${PYTHON_VERSION}-alpine${ALPINE_VERSION}
 
 COPY . /data
 
@@ -21,5 +23,3 @@ ENV OFFSET_UNIT="minutes"
 ENTRYPOINT ["gunicorn"]
 
 CMD ["--workers", "3", "--bind", "0.0.0.0:18091", "wsgi:app"]
-
-

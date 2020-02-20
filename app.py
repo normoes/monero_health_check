@@ -6,8 +6,8 @@ from monero_health import (
     daemon_last_block_check,
     daemon_status_check,
     daemon_combined_status_check,
-    DAEMON_STATUS_OK,
-    DAEMON_STATUS_ERROR,
+    # DAEMON_STATUS_OK,
+    # DAEMON_STATUS_ERROR,
     DAEMON_STATUS_UNKNOWN,
     HEALTH_KEY,
     LAST_BLOCK_KEY,
@@ -28,10 +28,11 @@ HEALTH_ENDPOINT = HEALTH_KEY
 LAST_BLOCK_ENDPOINT = LAST_BLOCK_KEY
 DAEMON_ENDPOINT = DAEMON_KEY
 
+
 def get_endpoint_info(func=None):
     status = DAEMON_STATUS_UNKNOWN
     response = defaultdict(dict)
-    
+
     if not func:
         return response
 
@@ -39,7 +40,7 @@ def get_endpoint_info(func=None):
     if result:
         status = result.pop("status", status)
         response["result"].update(result)
-    
+
     data = {HEALTH_ENDPOINT: {"status": status}}
     response["result"].update(data)
     return response
@@ -48,14 +49,14 @@ def get_endpoint_info(func=None):
 def get_status(func=None):
     status = DAEMON_STATUS_UNKNOWN
     response = defaultdict(dict)
-    
+
     if not func:
         return response
 
     result = get_endpoint_info(func)
     if result and "result" in result and HEALTH_ENDPOINT in result["result"]:
-        status = result["result"][HEALTH_ENDPOINT].get("status", status) 
-    
+        status = result["result"][HEALTH_ENDPOINT].get("status", status)
+
     data = {"status": status}
     response["result"].update(data)
 
@@ -64,7 +65,7 @@ def get_status(func=None):
 
 def get_combined_endpoint_info():
     response = defaultdict(dict)
-    
+
     result = daemon_combined_status_check()
     if result:
         # Move 'status' to 'health' within 'last_block'.
@@ -75,7 +76,7 @@ def get_combined_endpoint_info():
             data[LAST_BLOCK_ENDPOINT].update({HEALTH_ENDPOINT: {"status": status}})
             response["result"].update(data)
 
-        # Move 'status' to 'health' within 'last_block'.
+        # Move 'status' to 'health' within 'monerod'.
         if DAEMON_ENDPOINT in result:
             result_ = result[DAEMON_ENDPOINT]
             status = result_.pop("status", DAEMON_STATUS_UNKNOWN)
@@ -85,9 +86,13 @@ def get_combined_endpoint_info():
 
         # Move 'status' to 'health' within 'result'.
         status = DAEMON_STATUS_UNKNOWN
+        host = "---"
         if "status" in result:
             status = result.pop("status", status)
         data = {HEALTH_ENDPOINT: {"status": status}}
+        if "host" in result:
+            host = result.pop("host", host)
+        data["host"] = host
         response["result"].update(data)
 
     return response
@@ -96,12 +101,11 @@ def get_combined_endpoint_info():
 def get_combined_status():
     status = DAEMON_STATUS_UNKNOWN
     response = defaultdict(dict)
-    
+
     result = get_combined_endpoint_info()
-    print(result)
     if result and "result" in result and HEALTH_ENDPOINT in result["result"]:
-        status = result["result"][HEALTH_ENDPOINT].get("status", status) 
-    
+        status = result["result"][HEALTH_ENDPOINT].get("status", status)
+
     data = {"status": status}
     response["result"].update(data)
 
@@ -140,7 +144,10 @@ def daemon():
     return jsonify(response)
 
 
-@app.route(f"/{API_ENDPOINT}/{API_VERSION}/{DAEMON_ENDPOINT}/{HEALTH_ENDPOINT}", methods=["GET"])
+@app.route(
+    f"/{API_ENDPOINT}/{API_VERSION}/{DAEMON_ENDPOINT}/{HEALTH_ENDPOINT}",
+    methods=["GET"],
+)
 def daemon_health():
     """Get daemon status.
     """
@@ -158,7 +165,10 @@ def last_block():
     return jsonify(response)
 
 
-@app.route(f"/{API_ENDPOINT}/{API_VERSION}/{LAST_BLOCK_ENDPOINT}/{HEALTH_ENDPOINT}", methods=["GET"])
+@app.route(
+    f"/{API_ENDPOINT}/{API_VERSION}/{LAST_BLOCK_ENDPOINT}/{HEALTH_ENDPOINT}",
+    methods=["GET"],
+)
 def last_block_health():
     """Get dameon's last block status.
     """
@@ -168,4 +178,5 @@ def last_block_health():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True, threaded=True)
+    # Add 'nosec' comment to make bandit ignore [B104:hardcoded_bind_all_interfaces], [B201:flask_debug_true].
+    app.run(host="0.0.0.0", port=5000, debug=True, threaded=True)  # nosec
