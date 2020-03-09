@@ -15,7 +15,7 @@ from monero_health import (
 )
 
 
-logging.getLogger("DaemonHealth").setLevel(logging.DEBUG)
+logging.getLogger("DaemonHealthRest").setLevel(logging.DEBUG)
 
 app = Flask(__name__)
 # Allow requests to endpoints with and without traiilng slash.
