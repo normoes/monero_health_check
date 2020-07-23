@@ -4,10 +4,8 @@ import logging
 
 from monero_health import (
     daemon_last_block_check,
-    daemon_status_check,
+    daemon_stati_check,
     daemon_combined_status_check,
-    # DAEMON_STATUS_OK,
-    # DAEMON_STATUS_ERROR,
     DAEMON_STATUS_UNKNOWN,
     HEALTH_KEY,
     LAST_BLOCK_KEY,
@@ -19,7 +17,7 @@ logging.getLogger("DaemonHealthRest").setLevel(logging.DEBUG)
 
 app = Flask(__name__)
 # Allow requests to endpoints with and without traiilng slash.
-# app.url_map.strict_slashes = False
+app.url_map.strict_slashes = False
 
 API_VERSION = "v1"
 API_ENDPOINT = "api"
@@ -29,14 +27,19 @@ LAST_BLOCK_ENDPOINT = LAST_BLOCK_KEY
 DAEMON_ENDPOINT = DAEMON_KEY
 
 
-def get_endpoint_info(func=None):
+def get_endpoint_info(func=None, params=None):
     status = DAEMON_STATUS_UNKNOWN
     response = defaultdict(dict)
 
     if not func:
         return response
 
-    result = func()
+    result = None
+    if params:
+        result = func(**params)
+    else:
+        result = func()
+
     if result:
         status = result.pop("status", status)
         response["result"].update(result)
@@ -46,14 +49,14 @@ def get_endpoint_info(func=None):
     return response
 
 
-def get_status(func=None):
+def get_status(func=None, params=None):
     status = DAEMON_STATUS_UNKNOWN
     response = defaultdict(dict)
 
     if not func:
         return response
 
-    result = get_endpoint_info(func)
+    result = get_endpoint_info(func=func, params=params)
     if result and "result" in result and HEALTH_ENDPOINT in result["result"]:
         status = result["result"][HEALTH_ENDPOINT].get("status", status)
 
@@ -63,10 +66,15 @@ def get_status(func=None):
     return response
 
 
-def get_combined_endpoint_info():
+def get_combined_endpoint_info(params=None):
     response = defaultdict(dict)
 
-    result = daemon_combined_status_check()
+    result = None
+    if params:
+        result = daemon_combined_status_check(**params)
+    else:
+        result = daemon_combined_status_check()
+
     if result:
         # Move 'status' to 'health' within 'last_block'.
         if LAST_BLOCK_ENDPOINT in result:
@@ -98,11 +106,11 @@ def get_combined_endpoint_info():
     return response
 
 
-def get_combined_status():
+def get_combined_status(params=None):
     status = DAEMON_STATUS_UNKNOWN
     response = defaultdict(dict)
 
-    result = get_combined_endpoint_info()
+    result = get_combined_endpoint_info(params=params)
     if result and "result" in result and HEALTH_ENDPOINT in result["result"]:
         status = result["result"][HEALTH_ENDPOINT].get("status", status)
 
@@ -112,12 +120,16 @@ def get_combined_status():
     return response
 
 
+@app.route("/", methods=["GET"])
 @app.route(f"/{API_ENDPOINT}/{API_VERSION}", methods=["GET"])
 def index():
     """Get combined daemon status info.
     """
 
-    response = get_combined_endpoint_info()
+    # params = {"consider_p2p": True}
+    params = {}
+
+    response = get_combined_endpoint_info(params=params)
 
     return jsonify(response)
 
@@ -129,7 +141,10 @@ def overall_health():
     """Get combined daemon status.
     """
 
-    response = get_combined_status()
+    # params = {"consider_p2p": True}
+    params = {}
+
+    response = get_combined_status(params=params)
 
     return jsonify(response)
 
@@ -139,7 +154,10 @@ def daemon():
     """Get daemon info.
     """
 
-    response = get_endpoint_info(func=daemon_status_check)
+    # params = {"consider_p2p": True}
+    params = {}
+
+    response = get_endpoint_info(func=daemon_stati_check, params=params)
 
     return jsonify(response)
 
@@ -152,7 +170,10 @@ def daemon_health():
     """Get daemon status.
     """
 
-    response = get_status(func=daemon_status_check)
+    # params = {"consider_p2p": True}
+    params = {}
+
+    response = get_status(func=daemon_stati_check, params=params)
     return jsonify(response)
 
 

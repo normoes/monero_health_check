@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
       args:
       PYTHON_VERSION: "3.7"
-      ALPINE_VERSION: "3.10"
+      ALPINE_VERSION: "3.12"
 
     ports:
       - "18091:18091"
@@ -17,12 +17,16 @@ services:
     network_mode: host
     environment:
       - USER_ID=1000
-      - MONEROD_RPC_URL=127.0.0.1
+      # - PORT=18092
+      - MONEROD_URL=127.0.0.1
       - MONEROD_RPC_PORT=18081
+      - MONEROD_P2P_PORT=18080
+      - CONSIDER_P2P_STATUS=true
       # - MONEROD_RPC_USER=
       # - MONEROD_RPC_PASSWORD=
       - OFFSET=12
       - OFFSET_UNIT=minutes
+      # - HTTP_TIMEOUT=5
     restart: unless-stopped
     logging:
       driver: "json-file"
