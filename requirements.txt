@@ -15,7 +15,7 @@ idna==2.10                # via requests
 itsdangerous==1.1.0       # via flask
 jinja2==2.11.2            # via flask
 markupsafe==1.1.1         # via jinja2
-monero-health==1.0.5      # via -r requirements.in
+monero-health==1.0.6      # via -r requirements.in
 monero-scripts==0.0.7     # via monero-health
 python-monerorpc==0.5.13  # via -r requirements.in, monero-health
 requests==2.24.0          # via monero-scripts, python-monerorpc
