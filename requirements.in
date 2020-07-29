@@ -1,5 +1,6 @@
 python-monerorpc==0.5.13
-# monero-health==1.0.4
-git+https://github.com/normoes/monero_health.git
+monero-health==1.0.5
+# git+https://github.com/normoes/monero_health.git
 Flask==1.1.1
 gunicorn==20.0.4
+gevent==20.6.2

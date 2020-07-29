@@ -6,14 +6,15 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-      PYTHON_VERSION: "3.7"
-      ALPINE_VERSION: "3.12"
+        PYTHON_VERSION: "3.7"
+        ALPINE_VERSION: "3.12"
 
     ports:
       - "18091:18091"
       - "5000:5000"
     stdin_open: true
     tty: true
+    command: "--worker-class gevent --timeout 120 --workers 3"
     network_mode: host
     environment:
       - USER_ID=1000
