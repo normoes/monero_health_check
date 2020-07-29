@@ -1,7 +1,7 @@
 #!/bin/ash
 
 GUNICORN_CMD="gunicorn"
-GUNICORN_OPTIONS="--workers 3 --bind 0.0.0.0:$PORT"
+GUNICORN_OPTIONS="--bind 0.0.0.0:$PORT"
 GUNICORN_APP="wsgi:app"
 
 if [ -z "$@" ]; then
