@@ -21,16 +21,15 @@ RUN apk add --no-cache --virtual .build_deps \
     && apk add --no-cache \
         postgresql-dev \
         musl-dev \
-# RUN apk add --no-cache git \
     && python -m pip install --no-cache-dir --upgrade pip \
     && python -m pip install --no-cache-dir --upgrade -r /data/build_requirements.txt \
     && adduser -u "$USER_ID" -s /bin/false -D user \
     && chown -R user:user /data \
     && su user -s /bin/ash -c "pip-sync --user requirements.txt  --pip-args='--no-cache-dir'" \
     && chmod +x /data/entrypoint.sh \
-    && ls -l /data; ls -ld /data \
-    && apk del .build_deps \
-    && rm -rf /var/cache/apk/* || true
+    && apk del --no-cache .build_deps \
+    && rm -rf /var/cache/apk/* \
+    && rm -rf /tmp/*
 
 ENV PATH /home/user/.local/bin:$PATH
 USER user
@@ -48,7 +47,3 @@ ENV OFFSET=12
 ENV OFFSET_UNIT="minutes"
 
 ENTRYPOINT ["/data/entrypoint.sh"]
-
-# ENTRYPOINT ["gunicorn"]
-#
-# CMD ["--workers", "3", "--bind", "0.0.0.0:$PORT", "wsgi:app"]

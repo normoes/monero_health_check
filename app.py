@@ -2,7 +2,7 @@ from flask import Flask, jsonify
 from collections import defaultdict
 import logging
 
-from monero_health import (
+from monero_health.monero_health import (
     daemon_last_block_check,
     daemon_stati_check,
     daemon_combined_status_check,

@@ -1,3 +1,6 @@
+[![GitHub Release](https://img.shields.io/github/v/release/normoes/monero_health_check.svg)](https://github.com/normoes/monero_health_check/releases)
+[![GitHub Tags](https://img.shields.io/github/v/tag/normoes/monero_health_check.svg)](https://github.com/normoes/monero_health_check/tags?sort=semver)
+
 # Monero health check
 
 This is work in progress.
@@ -147,6 +150,15 @@ The current version uses the API version
         "health": {
             "status": "OK"
         },
+        "host": "127.0.0.1",
+        "p2p": {
+            "host": "127.0.0.1:18080",
+            "status": "OK"
+        },
+        "rpc": {
+            "host": "127.0.0.1:18081",
+            "status": "OK"
+        },
         "version": 12
     }
 }
@@ -170,6 +182,7 @@ The current version uses the API version
         "health": {
             "status": "OK"
         },
+        "host": "127.0.0.1",
         "last_block": {
             "block_recent": true,
             "block_recent_offset": 12,
@@ -183,6 +196,15 @@ The current version uses the API version
         },
         "monerod": {
             "health": {
+                "status": "OK"
+            },
+            "host": "127.0.0.1",
+            "p2p": {
+                "host": "127.0.0.1:18080",
+                "status": "OK"
+            },
+            "rpc": {
+                "host": "127.0.0.1:18081",
                 "status": "OK"
             },
             "version": 12
