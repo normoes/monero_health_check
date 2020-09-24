@@ -1,5 +1,5 @@
 [![GitHub Release](https://img.shields.io/github/v/release/normoes/monero_health_check.svg)](https://github.com/normoes/monero_health_check/releases)
-[![GitHub Tags](https://img.shields.io/github/v/tag/normoes/monero_health_check.svg)](https://github.com/normoes/monero_health_check/tags?sort=semver)
+[![GitHub Tags](https://img.shields.io/github/v/tag/normoes/monero_health_check.svg)](https://github.com/normoes/monero_health_check/tags)
 
 # Monero health check
 
@@ -119,15 +119,15 @@ The current version uses the API version
 ```
 {
     "result": {
+        "hash": "2931d04a73c4e286d1e568a0e61ba37fdf175ff6974d343ca136c62ecaaeeee4",
+        "block_age": "0:01:57",
+        "block_timestamp": "2020-09-23T19:40:02",
+        "check_timestamp": "2020-09-23T19:41:59",
+        "status": "OK",
         "block_recent": true,
-        "block_recent_offset": "12",
+        "block_recent_offset": 12,
         "block_recent_offset_unit": "minutes",
-        "block_timestamp": "2020-01-07T14:57:52",
-        "check_timestamp": "2020-01-07T14:58:07",
-        "hash": "b105782d8e50d142d05abf0159d248a2898c09c3984cd69e144c8bfe7def0ee3",
-        "health": {
-            "status": "OK"
-        }
+        "host": "mainnet.community.xmr.to:18081"
     }
 }
 ```
@@ -147,18 +147,16 @@ The current version uses the API version
 ```
 {
     "result": {
-        "health": {
-            "status": "OK"
-        },
-        "host": "127.0.0.1",
-        "p2p": {
-            "host": "127.0.0.1:18080",
-            "status": "OK"
-        },
         "rpc": {
-            "host": "127.0.0.1:18081",
-            "status": "OK"
+            "status": "OK",
+            "host": "mainnet.community.xmr.to:18081"
         },
+        "p2p": {
+            "status": "OK",
+            "host": "mainnet.community.xmr.to:18080"
+        },
+        "status": "OK",
+        "host": "mainnet.community.xmr.to",
         "version": 12
     }
 }
@@ -179,36 +177,32 @@ The current version uses the API version
 ```
 {
     "result": {
-        "health": {
-            "status": "OK"
-        },
-        "host": "127.0.0.1",
         "last_block": {
+            "hash": "2931d04a73c4e286d1e568a0e61ba37fdf175ff6974d343ca136c62ecaaeeee4",
+            "block_age": "0:01:57",
+            "block_timestamp": "2020-09-23T19:40:02",
+            "check_timestamp": "2020-09-23T19:41:59",
+            "status": "OK",
             "block_recent": true,
             "block_recent_offset": 12,
             "block_recent_offset_unit": "minutes",
-            "block_timestamp": "2020-01-07T14:58:14",
-            "check_timestamp": "2020-01-07T15:06:37",
-            "hash": "b105d4c44e0a4d7e0cadcf3997ee4947b895983341d05969d29c3c119c9bee08",
-            "health": {
-                "status": "OK"
-            }
+            "host": "mainnet.community.xmr.to:18081"
         },
         "monerod": {
-            "health": {
-                "status": "OK"
-            },
-            "host": "127.0.0.1",
-            "p2p": {
-                "host": "127.0.0.1:18080",
-                "status": "OK"
-            },
             "rpc": {
-                "host": "127.0.0.1:18081",
-                "status": "OK"
+                "status": "OK",
+                "host": "mainnet.community.xmr.to:18081"
             },
+            "p2p": {
+                "status": "OK",
+                "host": "mainnet.community.xmr.to:18080"
+            },
+            "status": "OK",
+            "host": "mainnet.community.xmr.to",
             "version": 12
-        }
+        },
+        "status": "OK",
+        "host": "mainnet.community.xmr.to"
     }
 }
 ```
@@ -247,18 +241,18 @@ Example:
 ```
 {
     "result": {
-        "block_recent": false,
-        "block_recent_offset": "12",
-        "block_recent_offset_unit": "minutes",
-        "block_timestamp": "---",
-        "check_timestamp": "2020-01-07T14:53:24",
-        "error": {
-            "error": "-341: could not establish a connection, original error: HTTPConnectionPool(host='127.0.0.1', port=18081): Max retries exceeded with url: /json_rpc (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7fe25e449cd0>: Failed to establish a new connection: [Errno 111] Connection refused'))",
-            "message": "Cannot determine daemon status. Daemon: '127.0.0.1:18081'."
-        },
         "hash": "---",
-        "health": {
-            "status": "UNKNOWN"
+        "block_age": -1,
+        "block_timestamp": "---",
+        "check_timestamp": "2020-09-24T11:52:30",
+        "status": "UNKNOWN",
+        "block_recent": false,
+        "block_recent_offset": 12,
+        "block_recent_offset_unit": "minutes",
+        "host": "mainnet.community.xmr:18081",
+        "error": {
+            "message": "Cannot determine status.",
+            "error": "-341: Could not establish a connection, original error: 'HTTPConnectionPool(host='mainnet.community.xmr', port=18081): Max retries exceeded with url: /json_rpc (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7f0f3bb5b150>: Failed to establish a new connection: [Errno -5] No address associated with hostname'))'."
         }
     }
 }
